@@ -1,9 +1,10 @@
-package mail
+package main
 
-import "fmt"
+func what() {
+	return
+}
 
 func main() {
-	fmt.Println("Hello World")
 	for {
 
 	}
