@@ -1,0 +1,48 @@
+services:
+  backend:
+    build:
+      context:
+        ./backend
+    ports:
+      - 8080:8080
+    depends_on:
+     - db
+     - rabbitmq
+    restart: unless-stopped
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: db
+    volumes:
+      - db_data:/var/lib/postgresql
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:4.2.0-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/mnesia
+      - rabbitmq_logs:/var/log/rabbitmq
+    restart: unless-stopped
+
+
+  mail:
+    build:
+      context:
+        ./mail
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+
+
+volumes:
+  db_data:
+  rabbitmq_data:
+  rabbitmq_logs:
