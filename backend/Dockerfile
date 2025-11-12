@@ -1,7 +1,7 @@
 FROM python:3.14.0-alpine
 LABEL authors="error"
 
-WORKDIR ./backend
+WORKDIR backend
 
 COPY main.py .
 COPY requests.txt .
