@@ -46,6 +46,16 @@ services:
       - rabbitmq
     restart: unless-stopped
 
+  bot:
+    build:
+      context: ./bot
+    environment:
+      BOT_TOKEN: "8503034890:AAEU8jcR9a8mDQ6HZneBfkAIDEbXTbavAMA"
+      BACKEND_URL: "http://backend:8080"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 
 volumes:
   db_data:

@@ -11,8 +11,7 @@ async def init_db():
             ]
         }
     )
-    # safe=True создает только новые таблицы, если их нет
-    # После удаления volume БД, создастся новая схема с правильной структурой
+
     await Tortoise.generate_schemas(safe=True)
 
 async def close_db():
