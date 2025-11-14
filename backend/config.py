@@ -12,10 +12,10 @@ class Settings:
     OPEN_ROUTER_MODEL: str = "deepseek/deepseek-r1-0528-qwen3-8b:free"
     OPEN_ROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     
-    # JWT
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "Slava_Krutoi")
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 3000
+    # # JWT
+    # SECRET_KEY: str = os.getenv("SECRET_KEY", "Slava_Krutoi")
+    # ALGORITHM: str = "HS256"
+    # ACCESS_TOKEN_EXPIRE_MINUTES: int = 3000
     
     @property
     def database_url(self) -> str:
