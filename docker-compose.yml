@@ -9,6 +9,9 @@ services:
      - db
      - rabbitmq
     restart: unless-stopped
+    environment:
+      OPEN_ROUTER:  "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"
+      SECRET_KEY: "Slava_Krutoi"
 
   db:
     image: postgres:17
