@@ -102,6 +102,7 @@ async def send_message(
             is_user=0
         )
     
+    type = message_data.chat_type
     user_message = await Message.create(
         chat=chat,
         text=message_data.text,
@@ -110,7 +111,7 @@ async def send_message(
     
     messages = await Message.filter(chat=chat).order_by("created_at")
     
-    llm_messages = llm_service.format_messages_for_llm(messages)
+    llm_messages = llm_service.format_messages_for_llm(messages, type)
     
     try:
         llm_response_text = await llm_service.generate_response(llm_messages)

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from typing import Optional
 from auth.models import User
+from chat.models import Chat, Message
 from auth.schemas import (
     UserCreate, UserResponse, UserUpdate, 
 )
@@ -45,4 +46,14 @@ async def update_me(user_data: UserUpdate, current_user: User = Depends(get_curr
         setattr(current_user, field, value)
     await current_user.save()
     return UserResponse.model_validate(current_user)
+
+# УБРАТЬ НА ПРОДАКШЕНЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕ
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT) # Каскадное удаление пользователя, чата и сообщений
+async def delete_me(current_user: User = Depends(get_current_user)):
+    chats = await Chat.filter(user=current_user)
+    for chat in chats:
+        await Message.filter(chat=chat).delete()
+        await chat.delete()
+    await current_user.delete()
+    return None
 

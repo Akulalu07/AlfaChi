@@ -4,6 +4,8 @@ from typing import List, Dict
 
 def get_system_prompt_for_chat_type(chat_type: int) -> str:
     """Генерирует системный промпт в зависимости от типа чата"""
+    base_prompt = "Твой ответ не должен превышать 3500 символов. Не используй разметку Markdown (символы *, _, `, # и другие). Пиши обычный текст без форматирования. Но с переносами строк."
+    
     prompts = {
         0: """Ты - юридический помощник для малого бизнеса. Твоя задача - помогать предпринимателям разбираться в юридических вопросах, связанных с ведением бизнеса. Ты можешь давать советы по регистрации компаний, налогообложению, трудовому праву, договорам и другим юридическим аспектам. Всегда подчеркивай, что твои советы носят информационный характер и не заменяют консультацию профессионального юриста.""",
         
@@ -18,7 +20,7 @@ def get_system_prompt_for_chat_type(chat_type: int) -> str:
         5: """Ты - гайд-помощник для малого бизнеса. Твоя задача - предоставлять пошаговые инструкции и руководства по различным аспектам ведения бизнеса. Ты можешь создавать подробные гайды по открытию бизнеса, регистрации, работе с клиентами, использованию различных инструментов и сервисов, решению типичных проблем и другим вопросам. Структурируй информацию четко и понятно."""
     }
     
-    return prompts.get(chat_type, "Ты - помощник для малого бизнеса. Готов помочь с различными вопросами.")
+    return (base_prompt + "\n\n" + prompts.get(chat_type, "Ты - помощник для малого бизнеса. Готов помочь с различными вопросами."))
 
 class LLMService:
     def __init__(self):
@@ -37,32 +39,39 @@ class LLMService:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
+                temperature=0.3,
                 timeout=60.0
             )
             return response.choices[0].message.content
         except Exception as e:
             raise Exception(f"Error calling LLM: {str(e)}")
     
-    def format_messages_for_llm(self, messages: List) -> List[Dict[str, str]]:
+    def format_messages_for_llm(self, messages: List, type: int) -> List[Dict[str, str]]:
         formatted = []
         first_assistant_message = True
         
         for msg in messages:
+            con = None
             if msg.is_user == 1:
                 role = "user"
             else:
                 # Эт первое сообщение на системный 
                 if first_assistant_message:
                     role = "system"
-
+                    con = get_system_prompt_for_chat_type(type)
                     first_assistant_message = False
                 else:
                     role = "assistant"
-            
-            formatted.append({
-                "role": role,
-                "content": msg.text
-            })
+            if con is not None:
+                formatted.append({
+                    "role": role,
+                    "content": con
+                })
+            else:
+                formatted.append({
+                    "role": role,
+                    "content": msg.text
+                })
         return formatted
 
 llm_service = LLMService()
