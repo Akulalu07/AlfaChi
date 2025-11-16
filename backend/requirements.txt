@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+tortoise-orm[asyncpg]
+aerich
+psycopg2-binary
+python-jose[cryptography]
+passlib[bcrypt]
+pydantic
+pydantic[email]
+openai
+python-multipart
