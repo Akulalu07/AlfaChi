@@ -8,15 +8,26 @@ services:
     depends_on:
      - postgres
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      OPEN_ROUTER:  "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"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      OPEN_ROUTER: ${OPEN_ROUTER}
+      OPEN_ROUTER_MODEL: ${OPEN_ROUTER_MODEL}
+
 
   postgres:
     image: postgres:17
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: data
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -38,9 +49,11 @@ services:
   bot:
     build:
       context: ./bot
+    env_file:
+      - .env
     environment:
-      BOT_TOKEN: "8503034890:AAEU8jcR9a8mDQ6HZneBfkAIDEbXTbavAMA"
-      BACKEND_URL: "http://backend:8080"
+      BOT_TOKEN: ${BOT_TOKEN}
+      BACKEND_URL: ${BACKEND_URL}
     depends_on:
       - backend
     restart: unless-stopped

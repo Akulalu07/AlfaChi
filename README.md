@@ -6,6 +6,7 @@ Telegram-бот с AI-помощниками для малого бизнеса 
 
 ### Запуск проекта
 
+Необходимо создать переменные окружения (см. ниже)
 ```bash
 docker compose up --build
 ```
@@ -25,7 +26,7 @@ docker compose up --build
 
 ### Backend (`backend/`)
 
-#### 1. Модуль аутентификации (`auth/`)
+#### 1. Модуль аутентификации (`source/auth/`)
 - **Регистрация пользователей** - создание нового пользователя по Telegram ID
 - **Управление профилем** - получение и обновление данных пользователя
 - **Аутентификация** - проверка пользователя через заголовок `X-Telegram-User-Id`
@@ -35,7 +36,7 @@ docker compose up --build
 - `GET /auth/me` - получение информации о текущем пользователе
 - `PUT /auth/me` - обновление профиля пользователя
 
-#### 2. Модуль чатов (`chats/`)
+#### 2. Модуль чатов (`source/chat/`)
 - **Управление чатами** - создание, получение и удаление чатов
 - **Отправка сообщений** - отправка сообщений пользователя и получение ответов от LLM
 - **История сообщений** - получение истории переписки
@@ -51,19 +52,19 @@ docker compose up --build
 **API эндпоинты:**
 - `POST /chats` - создание нового чата
 - `GET /chats` - получение списка чатов пользователя
-- `GET /chats/{chat_id}` - получение чата с сообщениями
-- `DELETE /chats/{chat_id}` - удаление чата
+- `GET /chats/{id}` - получение чата с сообщениями
+- `DELETE /chats/{id}` - удаление чата
 - `POST /chats/messages` - отправка сообщения
-- `GET /chats/{chat_id}/messages` - получение сообщений чата
+- `GET /chats/{id}/messages` - получение сообщений чата
 
-#### 3. Конфигурация (`config.py`)
+#### 3. Конфигурация (`source/config.py`)
 - Настройки подключения к базе данных
 - Настройки OpenRouter API
 - Модель LLM по умолчанию
 
 ### Bot (`bot/`)
 
-#### 1. Обработчики (`source/core/handlers`)
+#### 1. Обработчики (`source/core/handlers/`)
 - Регистрация пользователей через Telegram
 - Выбор типа помощника
 - Отправка вопросов и получение ответов от AI
@@ -94,18 +95,15 @@ docker compose up --build
 
 ### Способ 1: Изменение модели через переменную окружения
 
-Добавьте переменную окружения `OPEN_ROUTER_MODEL` в `docker-compose.yml`:
+Добавьте переменную окружения `OPEN_ROUTER_MODEL` в `.env` файл:
 
-```yaml
-backend:
-  environment:
-    OPEN_ROUTER: "your-api-key"
-    OPEN_ROUTER_MODEL: "anthropic/claude-3.5-sonnet"  # Новая модель
+```env
+OPEN_ROUTER_MODEL=anthropic/claude-3.5-sonnet  # Новая модель
 ```
 
 ### Способ 2: Изменение в коде
 
-Отредактируйте файл `backend/config.py`:
+Отредактируйте файл `backend/source/config.py`:
 
 ```python
 OPEN_ROUTER_MODEL: str = "your-model-name"  # Например: "openai/gpt-4"
@@ -131,11 +129,9 @@ OPEN_ROUTER_MODEL: str = "your-model-name"  # Например: "openai/gpt-4"
 |------------|----------|----------------------|--------------|
 | `OPEN_ROUTER` | API ключ для OpenRouter | - | ✅ Да |
 | `OPEN_ROUTER_MODEL` | Название модели LLM | `deepseek/deepseek-r1-0528-qwen3-8b:free` | ❌ Нет |
-| `DB_HOST` | Хост базы данных | `db` | ❌ Нет |
-| `DB_PORT` | Порт базы данных | `5432` | ❌ Нет |
-| `DB_USER` | Пользователь БД | `postgres` | ❌ Нет |
-| `DB_PASSWORD` | Пароль БД | `pass` | ❌ Нет |
-| `DB_NAME` | Имя базы данных | `db` | ❌ Нет |
+| `POSTGRES_USER` | Пользователь БД | `postgres` | ❌ Нет |
+| `POSTGRES_PASSWORD` | Пароль БД | `password` | ❌ Нет |
+| `POSTGRES_DB` | Имя базы данных | `data` | ❌ Нет |
 
 ### Bot
 
@@ -146,30 +142,7 @@ OPEN_ROUTER_MODEL: str = "your-model-name"  # Например: "openai/gpt-4"
 
 ### Настройка переменных окружения
 
-#### Для разработки (docker-compose.yml)
 
-Отредактируйте файл `docker-compose.yml`:
-
-```yaml
-services:
-  backend:
-    environment:
-      OPEN_ROUTER: "sk-or-v1-your-api-key-here"
-      OPEN_ROUTER_MODEL: "your-model-name"  # Опционально
-      SECRET_KEY: "your-secret-key"
-  
-  bot:
-    environment:
-      BOT_TOKEN: "your-telegram-bot-token"
-      BACKEND_URL: "http://backend:8080"
-  
-  db:
-    environment:
-      POSTGRES_PASSWORD: "your-db-password"
-      POSTGRES_DB: "your-db-name"
-```
-
-#### Для продакшена
 
 Создайте файл `.env` в корне проекта:
 
@@ -177,30 +150,15 @@ services:
 # Backend
 OPEN_ROUTER=sk-or-v1-your-api-key-here
 OPEN_ROUTER_MODEL=your-model-name
-SECRET_KEY=your-secret-key
 
 # Bot
 BOT_TOKEN=your-telegram-bot-token
 BACKEND_URL=http://backend:8080
 
 # Database
+POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your-secret-password
 POSTGRES_DB=your-db-name
-```
-
-И обновите `docker-compose.yml` для использования `.env`:
-
-```yaml
-services:
-  backend:
-    env_file:
-      - .env
-  bot:
-    env_file:
-      - .env
-  db:
-    env_file:
-      - .env
 ```
 
 ## Структура проекта
@@ -208,18 +166,28 @@ services:
 ```
 AlfaChi/
 ├── backend/              # FastAPI бэкенд
-│   ├── auth/            # Модуль аутентификации
-│   ├── chat/            # Модуль чатов и LLM
-│   ├── config.py        # Конфигурация
-│   ├── database.py      # Настройки БД
-│   ├── main.py          # Точка входа
-│   └── Dockerfile
+│   ├── source/
+│   │   ├── auth/        # Модуль аутентификации
+│   │   ├── chat/        # Модуль чатов и LLM
+│   │   ├── config.py    # Конфигурация
+│   │   ├── database.py  # Настройки БД
+│   │   └── main.py      # Точка входа
+│   ├── Dockerfile
+│   └── requirements.txt
 ├── bot/                 # Telegram бот
-│   ├── handlers/        # Обработчики команд
-│   ├── keyboards/       # Клавиатуры
-│   ├── backend_service.py
-│   ├── main.py          # Точка входа
-│   └── Dockerfile
+│   ├── source/
+│   │   ├── core/
+│   │   │   ├── handlers/    # Обработчики команд
+│   │   │   ├── keyboards.py # Клавиатуры
+│   │   │   ├── states.py    # Состояния FSM
+│   │   │   └── utils.py      # Утилиты
+│   │   ├── services/
+│   │   │   └── backend.py    # Сервис для работы с API
+│   │   ├── assets/          # Ресурсы (языки и т.д.)
+│   │   ├── main.py          # Точка входа
+│   │   └── stuff.py
+│   ├── Dockerfile
+│   └── requirements.txt
 ├── docker-compose.yml   # Конфигурация Docker Compose
 └── README.md           # Readme файл
 ```
