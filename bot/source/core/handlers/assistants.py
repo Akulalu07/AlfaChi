@@ -101,7 +101,7 @@ async def process_question(message: Message, state: FSMContext) -> None:
     start_message = await message.answer(t["assistant.generating"])
 
     try:
-        async with (await backend.post("/chats/message", headers={"X-Telegram-User-Id": str(telegram_id)}, json=data)) as response:
+        async with (await backend.post("/chats/messages", headers={"X-Telegram-User-Id": str(telegram_id)}, json=data)) as response:
             if response.status == 200:
                 answer = await response.json()
                 text = answer["text"]
