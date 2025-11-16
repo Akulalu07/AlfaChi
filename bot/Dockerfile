@@ -3,13 +3,8 @@ LABEL authors="error"
 
 WORKDIR /bot
 
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-
-
-COPY . .
-
-CMD ["python", "main.py"]
-
+COPY ./source .
+CMD ["python", "./main.py"]

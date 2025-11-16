@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     surname: Optional[str] = None

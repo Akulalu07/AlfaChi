@@ -1,6 +1,6 @@
-from tortoise.models import Model
 from tortoise import fields
-from datetime import datetime
+from tortoise.models import Model
+
 
 class User(Model):
     id = fields.IntField(pk=True)
@@ -13,4 +13,3 @@ class User(Model):
     
     class Meta:
         table = "users"
-

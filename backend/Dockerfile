@@ -10,14 +10,13 @@ RUN apk add --no-cache \
     postgresql-dev \
     postgresql-libs
 
-COPY requests.txt .
-RUN pip install -r requests.txt
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
 #Ещё одно моё дополнение / Артём
 RUN apk del gcc musl-dev postgresql-dev
 
-COPY . .
+COPY ./source .
 
 EXPOSE 8080
-
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

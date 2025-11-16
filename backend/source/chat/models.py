@@ -1,5 +1,6 @@
-from tortoise.models import Model
 from tortoise import fields
+from tortoise.models import Model
+
 
 class Chat(Model):
     id = fields.IntField(pk=True)
@@ -8,6 +9,7 @@ class Chat(Model):
     
     class Meta:
         table = "chats"
+
 
 class Message(Model):
     id = fields.IntField(pk=True)
@@ -18,4 +20,3 @@ class Message(Model):
     
     class Meta:
         table = "messages"
-
