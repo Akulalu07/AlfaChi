@@ -1,20 +1,22 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+
 
 class UserCreate(BaseModel):
     telegram_id: int
-    name: Optional[str] = None
-    surname: Optional[str] = None
-    company_name: Optional[str] = None
+    user_name: str | None = None
+    company_name: str | None = None
+    company_info: str | None = None
 
 
 class UserResponse(BaseModel):
     id: int
     telegram_id: int
-    name: Optional[str] = None
-    surname: Optional[str] = None
-    company_name: Optional[str] = None
+
+    user_name: str | None = None
+    company_name: str | None = None
+    company_info: str | None = None
+
     created_at: datetime
     is_admin: bool
     
@@ -23,6 +25,6 @@ class UserResponse(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    name: Optional[str] = None
-    surname: Optional[str] = None
-    company_name: Optional[str] = None
+    user_name: str | None = None
+    company_name: str | None = None
+    company_info: str | None = None

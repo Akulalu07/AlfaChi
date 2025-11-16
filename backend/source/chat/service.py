@@ -6,8 +6,11 @@ from chat.models import Message
 
 
 def get_system_prompt_for_chat_type(chat_type: int) -> str:
-    prompt: str = config.PROMPTS.get(chat_type, "Ты - помощник для малого бизнеса. Готов помочь с различными вопросами.")
-    return f"{config.BASE_PROMPT}\n\n{prompt}"
+    chat_prompt: str = config.PROMPTS.get(chat_type, "Ты - помощник для малого бизнеса. Готов помочь с различными вопросами.")
+    return f"{config.BASE_PROMPT}\n\n{chat_prompt}"
+
+def get_personalized_prompt(system_prompt: str, context_info: str) -> str:
+    return f"{system_prompt}\n\nБизнес пользователя:{context_info}"
 
 
 class LLMService:
@@ -50,7 +53,6 @@ class LLMService:
 
                 if first_assistant_message:
                     role = "system"
-                    content = get_system_prompt_for_chat_type(type)
                     first_assistant_message = False
 
                 else:

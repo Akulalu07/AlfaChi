@@ -10,9 +10,9 @@
     "register.register_error": "Произошла ошибка при регистрации. Попробуйте позже.",
     "register.success": "Вы успешно зарегистрированы",
 
-    "register.enter_name": "Пожалуйста, введите ваше имя",
-    "register.enter_surname": "Пожалуйста, введите вашу фамилию",
-    "register.enter_company": "Пожалуйста, введите вашу компанию",
+    "register.enter_user_name": "Пожалуйста, введите ваше ФИО",
+    "register.enter_company_name": "Пожалуйста, введите название вашей компании",
+    "register.enter_company_info": "Пожалуйста, расскажите немного о вашей компании",
 
 
     "assistant.prompt_legal": "Вы выбрали Юридический помощник. Задайте свой вопрос",

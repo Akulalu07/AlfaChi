@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List, Optional
+
 from auth.models import User
 from auth.router import get_current_user
+
 from chat.models import Chat, Message
 from chat.schemas import (
     ChatCreate, ChatResponse, MessageResponse, 
     ChatWithMessages, SendMessageRequest
 )
-from chat.service import llm_service, get_system_prompt_for_chat_type
+
+from chat.service import llm_service, get_system_prompt_for_chat_type, get_personalized_prompt
 
 
 router = APIRouter(prefix="/chats", tags=["chats"])
@@ -25,18 +27,19 @@ async def create_chat(
         )
     chat = await Chat.create(type=chat_data.type, user=current_user)
     
-    # системный промпт как первое сообщение
     system_prompt = get_system_prompt_for_chat_type(chat_data.type)
+    personalized_prompt = get_personalized_prompt(system_prompt, current_user.company_info)
+
     await Message.create(
         chat=chat,
-        text=system_prompt,
+        text=personalized_prompt,
         is_user=0
     )
     
     return ChatResponse(id=chat.id, type=chat.type, user_id=current_user.id)
 
 
-@router.get("/", response_model=List[ChatResponse])
+@router.get("/", response_model=list[ChatResponse])
 async def get_user_chats(current_user: User = Depends(get_current_user)):
     chats = await Chat.filter(user=current_user).all()
     return [ChatResponse(id=chat.id, type=chat.type, user_id=current_user.id) for chat in chats]
@@ -101,9 +104,11 @@ async def send_message (
         chat = await Chat.create(type=message_data.chat_type, user=current_user)
         
         system_prompt = get_system_prompt_for_chat_type(message_data.chat_type)
+        personalized_prompt = get_personalized_prompt(system_prompt, current_user.company_info)
+
         await Message.create (
             chat=chat,
-            text=system_prompt,
+            text=personalized_prompt,
             is_user=0
         )
     
@@ -135,7 +140,7 @@ async def send_message (
     return MessageResponse.model_validate(llm_message)
 
 
-@router.get("/{chat_id}/messages", response_model=List[MessageResponse])
+@router.get("/{chat_id}/messages", response_model=list[MessageResponse])
 async def get_chat_messages(
     chat_id: int,
     current_user: User = Depends(get_current_user)

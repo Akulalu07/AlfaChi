@@ -25,18 +25,20 @@ async def get_current_user (
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate):
     existing_user = await User.get_or_none(telegram_id=user_data.telegram_id)
+    
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this Telegram ID already registered"
         )
     
-    user = await User.create(
+    user = await User.create (
         telegram_id=user_data.telegram_id,
-        name=user_data.name,
-        surname=user_data.surname,
-        company_name=user_data.company_name
+        user_name=user_data.user_name,
+        company_name=user_data.company_name,
+        company_info=user_data.company_info,
     )
+    
     return UserResponse.model_validate(user)
 
 
