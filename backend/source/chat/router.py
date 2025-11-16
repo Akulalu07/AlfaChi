@@ -1,129 +1,116 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from auth.models import User
-from auth.router import get_current_user
+from auth.router import get_user
 
-from chat.models import Chat, Message
-from chat.schemas import (
-    ChatCreate, ChatResponse, MessageResponse, 
-    ChatWithMessages, SendMessageRequest
-)
-
-from chat.service import llm_service, get_system_prompt_for_chat_type, get_personalized_prompt
+from chat import schemas, models
+from chat.service import LLM
 
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 
 
-@router.post("/", response_model=ChatResponse, status_code=status.HTTP_201_CREATED)
-async def create_chat(
-    chat_data: ChatCreate,
-    current_user: User = Depends(get_current_user)
-):
-    if chat_data.type < 0 or chat_data.type > 5:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Chat type должен быть между 0 и 5"
+@router.post("", status_code=status.HTTP_201_CREATED)
+async def setup_chat(data: schemas.Chat.Setup, user: User = Depends(get_user)) -> None:
+    if not (0 <= data.type <= 5):
+        raise HTTPException (
+            status_code = status.HTTP_400_BAD_REQUEST,
+            detail = "Chat type must be in range(0, 6)"
         )
-    chat = await Chat.create(type=chat_data.type, user=current_user)
-    
-    system_prompt = get_system_prompt_for_chat_type(chat_data.type)
-    personalized_prompt = get_personalized_prompt(system_prompt, current_user.company_info)
+    chat = await models.Chat.create(type=data.type, user=user)
 
-    await Message.create(
+    await models.Message.create (
         chat=chat,
-        text=personalized_prompt,
+        text=LLM.build_prompt(data.type, user.company_info),
         is_user=0
     )
-    
-    return ChatResponse(id=chat.id, type=chat.type, user_id=current_user.id)
 
 
-@router.get("/", response_model=list[ChatResponse])
-async def get_user_chats(current_user: User = Depends(get_current_user)):
-    chats = await Chat.filter(user=current_user).all()
-    return [ChatResponse(id=chat.id, type=chat.type, user_id=current_user.id) for chat in chats]
+@router.get("", response_model=list[schemas.Chat.Response])
+async def get_chats(user: User = Depends(get_user)):
+    chats = await models.Chat.filter(user=user).all()
+    return [
+        schemas.Chat.Response (
+            id = chat.id,
+            type = chat.type,
+            user_id = user.id
+        )
+        for chat in chats
+    ]
 
 
-@router.get("/{chat_id}", response_model=ChatWithMessages)
-async def get_chat (
-    chat_id: int,
-    current_user: User = Depends(get_current_user)
-):
-    chat = await Chat.get_or_none(id=chat_id, user=current_user)
+@router.get("/{id}", response_model=schemas.ChatWithMessages)
+async def get_chat(id: int, user: User = Depends(get_user)):
+    chat = await models.Chat.get_or_none(id=id, user=user)
     if not chat:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Чат не найден"
+        raise HTTPException (
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Chat not found"
         )
     
-    messages = await Message.filter(chat=chat).order_by("created_at")
-    chat_data = ChatResponse(id=chat.id, type=chat.type, user_id=current_user.id)
-    messages_data = [MessageResponse.model_validate(msg) for msg in messages]
+    messages = await models.Message.filter(chat=chat).order_by("created_at")
+    chat_data = schemas.Chat.Response(id=chat.id, type=chat.type, user_id=user.id)
+    messages_data = [schemas.Message.Response.model_validate(msg) for msg in messages]
     
-    return ChatWithMessages(**chat_data.model_dump(), messages=messages_data)
+    return schemas.ChatWithMessages(**chat_data.model_dump(), messages=messages_data)
 
 
-@router.delete("/{chat_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_chat(
-    chat_id: int,
-    current_user: User = Depends(get_current_user)
-):
-    chat = await Chat.get_or_none(id=chat_id, user=current_user)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_chat(id: int, user: User = Depends(get_user)):
+    chat = await models.Chat.get_or_none(id=id, user=user)
     if not chat:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Чат не найден"
+        raise HTTPException (
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Chat not found"
         )
     await chat.delete()
 
 
-@router.post("/message", response_model=MessageResponse)
+@router.post("/messages", response_model=schemas.Message.Response)
 async def send_message (
-    message_data: SendMessageRequest,
-    current_user: User = Depends(get_current_user)
+    message_data: schemas.SendMessageRequest,
+    user: User = Depends(get_user)
 ):
     if message_data.chat_id:
-        chat = await Chat.get_or_none(id=message_data.chat_id, user=current_user)
+        chat = await models.Chat.get_or_none(id=message_data.chat_id, user=user)
         if not chat:
             raise HTTPException (
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Чат не найден"
+                detail="Chat not found"
             )
     else:
+
         if message_data.chat_type is None:
             raise HTTPException (
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="chat_type необходимо при создании нового чата"
+                detail="Chat type required for setup"
             )
+        
         if message_data.chat_type < 0 or message_data.chat_type > 5:
             raise HTTPException (
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Chat type должен быть между 0 и 5"
+                detail="Chat type must be in range(0, 6)"
             )
-        chat = await Chat.create(type=message_data.chat_type, user=current_user)
         
-        system_prompt = get_system_prompt_for_chat_type(message_data.chat_type)
-        personalized_prompt = get_personalized_prompt(system_prompt, current_user.company_info)
-
-        await Message.create (
+        chat = await models.Chat.create(type=message_data.chat_type, user=user)
+        await models.Message.create (
             chat=chat,
-            text=personalized_prompt,
+            text=LLM.build_prompt(message_data.chat_type, user.company_info),
             is_user=0
         )
     
     type = message_data.chat_type
-    user_message = await Message.create (
+    await models.Message.create (
         chat=chat,
         text=message_data.text,
         is_user=1
     )
     
-    messages = await Message.filter(chat=chat).order_by("created_at")
-    llm_messages = llm_service.format_messages_for_llm(messages, type)
+    messages = await models.Message.filter(chat=chat).order_by("created_at")
+    llm_messages = LLM.format_messages_for_llm(messages, type)
     
     try:
-        llm_response_text = await llm_service.generate_response(llm_messages)
+        llm_response_text = await LLM.generate_response(llm_messages)
     except Exception as error:
         print(error)
         raise HTTPException (
@@ -131,26 +118,23 @@ async def send_message (
             detail=f"Error getting LLM response: {str(error)}"
         )
     
-    llm_message = await Message.create (
+    llm_message = await models.Message.create (
         chat=chat,
         text=llm_response_text,
         is_user=0
     )
     
-    return MessageResponse.model_validate(llm_message)
+    return schemas.Message.Response.model_validate(llm_message)
 
 
-@router.get("/{chat_id}/messages", response_model=list[MessageResponse])
-async def get_chat_messages(
-    chat_id: int,
-    current_user: User = Depends(get_current_user)
-):
-    chat = await Chat.get_or_none(id=chat_id, user=current_user)
+@router.get("/{id}/messages", response_model=list[schemas.Message.Response])
+async def get_chat_messages(id: int, user: User = Depends(get_user)):
+    chat = await models.Chat.get_or_none(id=id, user=user)
     if not chat:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Чат не найден"
+        raise HTTPException (
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Chat not found"
         )
     
-    messages = await Message.filter(chat=chat).order_by("created_at")
-    return [MessageResponse.model_validate(msg) for msg in messages]
+    messages = await models.Message.filter(chat=chat).order_by("created_at")
+    return [schemas.Message.Response.model_validate(msg) for msg in messages]

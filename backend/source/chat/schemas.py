@@ -1,48 +1,43 @@
 from pydantic import BaseModel
-
 from datetime import datetime
-from typing import List, Optional
 
 
-class ChatBase(BaseModel):
-    type: int  # 0-5
+class Chat:
+
+    class Base(BaseModel):
+        type: int  # 0-5
+
+    class Setup(Base):
+        pass
+
+    class Response(Base):
+        id: int
+        user_id: int
+        
+        class Config:
+            from_attributes = True
 
 
-class ChatCreate(ChatBase):
-    pass
+class Message:
+
+    class Base(BaseModel):
+        text: str
+        is_user: int  # 0 - модель, 1 - пользователь
+
+    class Response(Base):
+        id: int
+        chat_id: int
+        created_at: datetime
+        
+        class Config:
+            from_attributes = True
 
 
-class ChatResponse(ChatBase):
-    id: int
-    user_id: int
-    
-    class Config:
-        from_attributes = True
-
-
-class MessageBase(BaseModel):
-    text: str
-    is_user: int  # 0 - модель, 1 - пользователь
-
-
-class MessageCreate(MessageBase):
-    chat_id: int
-
-
-class MessageResponse(MessageBase):
-    id: int
-    chat_id: int
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-
-class ChatWithMessages(ChatResponse):
-    messages: List[MessageResponse] = []
+class ChatWithMessages(Chat.Response):
+    messages: list[Message.Response] = []
 
 
 class SendMessageRequest(BaseModel):
     text: str
-    chat_id: Optional[int] = None
-    chat_type: Optional[int] = None  # Если создается новый чат
+    chat_id: int | None = None
+    chat_type: int | None = None
